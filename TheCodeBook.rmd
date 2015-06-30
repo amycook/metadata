@@ -1,0 +1,395 @@
+---
+title: "The Code Book"
+author: "Amy Cook"
+date: "Friday, January 30, 2015"
+output: word_document
+---
+
+```{r function, echo=FALSE,include=FALSE}
+#source('invert.R')
+
+```
+# Contents
+
+1. Code Book - Describes each variable and their units
+2. Information about the summary choices you made
+3. Information about the experimental study design you used
+4. Study Design - thorough description of how you collected the data
+    a. include what variables you excluded
+5. The instruction list
+    a. a computer script in R
+    b. the output is the processed data
+
+
+__
+
+#1. Code Book
+
+Description of each variable
+
+1. Total.Fee - how does this relate to total invoiced. is it mostly zero?
+
+## Invoices Code Book
+
+Description of each variable
+
+* Job.Number: number assigned to each job - first number indicates year
+* Job:
+* Invoice.Date: Date invoice issued to clienet
+* Created.Date: Date created in SAGE.
+* code.client: fabricated code for each client - between C2000 and C3000
+* mlsto: milestone abbreviation of job number
+* inv.mlsto: total amount invoiced for that jobnumber (including all milestones)
+* num.inv: number of invoices for that job number and all milestones
+* mean.inv: mean invoice size for that job and all milestones (excluding negative invoices)
+* Inv.freq: mean number of days between invoices for that job (incl milestones)
+* num.neginv: number of negative invoices in that job
+* client.meaninv: mean size of invoice for a client - average size of all invoices for that client
+* client.invfreq: mean days between all invoices for that client (only including positive invoices)
+* client.numinv: mean number of invoices for a client in one job
+* client.totinv: mean total invoiced amount for a client accross all their jobs
+
+## Description of each dataset
+
+* all6 
+    * first fully de-identified dataset of jobs
+* all7
+    * inv.mlsto == 0 deleted
+    * culled to top contributor of each discipline - ie one row per milestone
+* all 7a 
+    * inv.mlsto == 0 deleted
+    * culled to top contributor of each discipline - ie one row per milestone
+    * deleted irrelevant variables such as variables not organised per milestone
+    * deleted errors or outliers
+    
+* all7b
+    * inv.mlsto == 0 deleted
+    * culled to top contributor of each discipline - ie one row per milestone
+    * NA values in 'core' variables imputed
+    * many errors deleted (appeared as outliers)
+    
+* all7c
+    * added client.age
+
+
+#2. Information about the Summary Choices Made
+
+1. Negative invoices:
+    * 2013.026.200 write off of civil engineering services. treat as outlier?
+    * 2012.039.300 invoice should be $58,800. Credit of $1500 overwrote the invoices paid.
+    * 2012.160.300 reached phase 1 of project only. $20000 total invoiced.
+    
+
+
+#4. Study Design
+
+a. Aquire data
+    * downloaded job data for the years 2002-2014 from SAGE CRM. Output in excel format.
+    * saved as .csv, loaded each excel file into R and compied using rbind
+c. Delete Variables
+    * 2013 file has extra columns compared to others.
+        + Delete column 4 and 5 'Principal.Consultant' and 'Principal.Consultant.Contact as same as 'client contact' etc.
+        + Next delete column 15,16 - 'Priority', 'Product' as they are blank
+        + delete column 17 as it states 'AUD' in each row
+        + delete columns 25-28 as they are all related to WIP - work in progress reports. new in 2014
+        + delete columns 37 and 38 - 'total order value' and 'total quote value' as they were blank
+d. Cleaning
+    * rename columns to shorten names
+    * extracted rows which were mainly empty exluding a single line of text under 'Role'
+        + Saved this data in a separate file 'extra_info.csv'
+    * STILL TO DO: tot.timesheet.cost is totally off in 2013.189.300 - check whats going on.
+    * Discipline: 'Structural,' needs to be just 'Structural'. Same for water and environ planning
+    * until 2010.030, didn't record discipline. need to assign discipline according to director
+        * Rod Bligh - always structural 
+        * Paul Callum - always structural 
+        * Paul Easingwood - always structural
+        * Cameron Riach - always Civil
+        * David HH - always water
+        * Chris tanner - sometimes Civil, Environ Planning, Water
+            * Environmental Planning didn't start until 2008 (one job). Then 2010.314 onwards.
+    
+e. De-identifying data
+    * refer 'deidentify.R' file
+    * client2 - a column with the client name only (removed names in front of C/-)
+        * gave each unique client a code between C2000-C3000. There were 904 unique clients
+    * Client contact
+        * gave each contact a number between CN1000 - CN2000. There were 988 unique contacts
+    * Job numbers
+        * job numbering method changed at the beginning of 2011
+        * 2002-2010. Each job number had the format 2002.001.1
+        * A milestone had the format 2002.001.2
+        * Gave each job number a unique code between J1000-J3000.
+        * Milestones have a letter of the alphabet attached. Ie J2000B could be 2004.122.2
+        * Jobs from 2011-2015. Each job number has the format 2011.001.100. A milestone is 2011.001.101
+        * civil, Enviro, structural have different 'starting' numbers. Structural uses the 300's: 2011.001.300
+        * Gave each job number a code between J3001-J5000
+        * Milestone have two letters of the alphabet attached. One for the group, one for the number milestone
+            * for example 2011.001.103 could be J4588AC
+    * Staff
+        * the full list of staff names was compiled. 
+        * a corresponding position was assigned to each name. For example, 'Director', or 'technical' or 'senior professional'.
+        * each staff member was assigned an individual code between S100-S200. 
+        * These codes replaced the 'Director', 'Project.Engineer', and 'Engineer.2' columns. 
+        * Position columns were created to match the 'Project.Engineer' and 'Engineer.2' columns
+    * Final file saved as all5
+        
+f. Questions
+    * 3 rows with negative invoiced amounts
+        + 2013.026.200 write off of civil engineering services. save in outlier.csv eventually.
+        + 2012.039.300 invoice should be $58,800. Credit of $1500 overwrote the invoices paid.
+        + 2012.160.300 reached phase 1 of project only. $20000 total invoiced.
+    * cross checking intranet data with extracted data.
+        + tot.invoiced needs to be cross checked with the summations of invoices paid data.
+    * sometimes project categories are input wrong. need to check these. 
+    * jobs with invoicing AND timesheet hours equal to zero. What do these reveal?
+
+j. Engineered Variables
+    * year of job - tick
+    * profit (invoiced - cost)
+        * problem: something is wrong with the 'cost in some jobs'
+    * balance (invoiced - charge)
+    * km from city - tick!
+        * went through full list of Suburb names in the original data set and corrected any with 'NA' or the wrong Postcode
+        * obtained latitude/longitude coordinates for all australian postcodes from 'corra.com.au'
+        * checked many of the suburbs myself - coordinates match google maps
+        * calculated the distance to brisbane CBD for each postcode coordinate
+        * merged the distances and postcode datafraem with the postcode column of the 'all' dataframe
+        * tick!!
+    * Client characteristics - tick!!
+        + Client company type (architect) - yes
+        + client company size - yes
+        + Client company location - no
+        + Client contact seniority - decided not to
+        + client number of offices - yes
+        + client breadth around the world - yes
+        + client - description of the bulk of work they undertake -  yes
+        + client company age at time of project - yes
+        + mean number of jobs per quarter - too hard? talk to paul
+        + mean increase in jobs per quarter - too hard? talk to paul
+    * description of job suburb - residential, inner city, cbd, acerage, new suburb - too laborious
+    * job type two: any extra info can gain from address. ie heritage etc. - very laborious
+    * multiple parts to job? ie could invoicing show up inaccurately - tick - Y/N milestone column
+
+
+## Study Design for Invoices data
+
+1. load .csv file with raw data
+    * delete cases created on Jan 16 (after original data was harvested)
+
+2. 12 variables. deleted:
+    * Territory: all BlighTanner
+    * Invoice.Name deleted as identical to Invoice.Number
+    * Created.Date: Date created in intranet system.
+
+3. Questions:
+    * Invoice.Number WIP ONLY? Work in Progress
+        + All Created.Date= 29/12/2009
+        + All have Amount.Paid= 0
+        + One WIP invoice per job number except one case which has two.
+        + All fall between 2002 - 2008. most in 2006 and 2007
+        + Can either be the first line of a normal job or the only line in a job with invoiced=0. ie no win.
+        + create engineered variable with True/False for WIP listed. then delete lines with WIP.
+    * Invoice.Number BAD DEBT?
+        + always associated with write offs, ie credits, or negative invoice amounts
+    * negative amount paid?
+        + summed and put into final table for each individual job.
+    * Unassigned or blank for status?
+        + don't see any relevance or pattern - delete status column
+    * meaning of Created.Date?
+        + Date invoice input into company intranet by HR.
+    * How do Job.Numbers align with project data data frame? 
+        + About 1000 less jobs. This matches with the 'all' dataframe which has a little over 1000 jobs with $0 invoiced. 
+    * Account.Status - two blanks? one invoice partially paid?
+        + listed both as 'Invoice Outstanding'
+    * how are invoices of older jobs recorded. ie before SAGE was implemented?
+        + have a look at number of invoices per job.
+    * Amount.Paid - huge negative amounts - investigate.
+        + equal to a negative invoice - not an issue.
+    * Is there a way to tell when an invoice was issued vs when it was paid?
+        + NO
+    * spike in 'created.date'
+        + Can only imagine that's when they added all the stuff to CRM system - 29th dec 2009
+    * look into Amnt.Paid = 0 
+    * look into Inv.Amt = 0?
+
+4. Cleaning:
+    * Job: delete job number from front - tick
+    * Job names: change 'dept' to 'department'
+    * if year founded later than year of job - delete year founded?
+    * delete any rows that have repeated Invoice Date, Job Number AND Inv.Amount (approx 38 times)
+    
+5. Engineered Variables:
+    * tick: Year
+    * First invoice Date
+    * Last Invoice date
+    * span of invoicing
+    * frequency of invoices
+    * mean size of invoice for a job
+    * number of invoices for a job
+    * ratio of mean size of invoice/Tot.Invoiced
+    * tick - total timesheet cost for a job. not looking great in other spreadsheet
+    * tick - total invoiced for a job - cross check with other data
+    * TD: manually calc subcontractor invoices for each job
+    * Client characteristics:
+        + mean time to pay an invoice - can't get without wendy - prob can't be bothered
+        + mean invoice size
+        + percent outstanding invoices - meh
+        + percent "BAD DEBT" invoices
+        + do size of invoices increase or decrease over span of a job?
+
+
+## Study Design for Hours data
+
+1. load .csv file with raw data
+    * hours0212 and 20132014hours.csv
+
+2. variables deleted:none
+
+
+3. Questions:
+    * 1274 entries listed as 'WIP ONLY' and sometimes at a weird date. What does this mean?
+    * a lot of entries where the car mileage or car costs have been entered under timesheet hours and tiemsheet charge. Need a new column for disbursements.
+
+4. Cleaning:
+    * deleted all rows with all NA's or all except one NA
+    * deleted repeated rows
+    * tick: de-identify employee names - with number, position and discipline
+
+5. Engineered Variables:
+    * Disbursements: if details contained 'mileage or km', if user contained 'disburse', if the cost was zero, or if the ratio of cost/hours was about 1, the charge value was moved to disbursements. And charge, cost and hours was set to zero
+    * tick: number of diff people who worked on a job
+    * tick: % prof hours by director
+    * tick: % prof hours by senior
+    * tick: % prof hours by normal level
+    * tick: % prof hours by grad
+    * tick: % tech hours by senior
+    * tick: % tech hours by normal level
+    * tick: % tech hours by grad
+    * tick: timespan of job hours
+    * tick: # of disciplines
+    * tick: Start date in month
+    * tick: Start date in year
+    * tick: number of days with hours recorded to a job
+    * tick: ratio of hours/days
+    
+
+#5. The Instruction List
+
+1. Clean
+2. created a dataframe which was the sum of charge, cost, and hours for each unique job number
+3. merged this new data frame with the 'tot.TS.cost' and Tot.TS.Charge and Tot.Hours column in the all dataframe.
+4. Compared these to make sure the new dataframe was totalling hours/costs correctly.
+5. merge new timesheet charge and cost summary data frame into all data frame.
+
+
+## Study Design for Combined data
+
+1. load .csv file with raw data
+    * all6.csv
+
+2. variables deleted:none
+
+3. Questions: 
+    * job 2011.246.200 - peadar wrote down .75 hours, invoiced $7000
+    * is there a way to tell when an invoice was issued vs when it was paid?
+    * how to delete outliers? is the data from 2002-2007 that reliable??
+
+4. Cleaning:
+
+5. Engineered Variables
+    * Profit: Invoiced amount - (ideal Charge amount for all hours spent + disbursements)
+    * Balance: Invoiced amount - (cost amount for all hours spent + disbursements)
+    * Need to account for MILESTONES: jobs which are related to each other with the same client and subject matter.
+        * sometimes these jobs are invoiced from one milestone, and hours are recorded in other milestones- throws off the profit and balance numbers for each row (a milestone is one row)
+        * solution: sum profit, balance, hours, hours cost, disbursements for each job including all of its milestones
+            * this was possible using the milestone prefix - ie 2011.088.1 is the prefix for all milestones such as 2011.088.101
+            * Two types of prefixes: 2011.088.1 and 2007.120. where a milestone would be 2007.120.2 
+        * print summed numbers identically for each milestone row
+        * in further analyses - need to represent all mielstones as ONE row - one job. Otherwise weighted too heavily in stats analysis
+        * sign milestones: 2011.072.3 were treated as individual jobs as it is a unique situation.
+
+## Insturction List for Combined Data
+
+1. First stats
+    * lm
+        * load all6.csv
+        * delete any rows with invoiced == 0 and duplicates because of milestone
+        * doesn't work because of missing data! elimintes 2233 out of 2332 observations!!!!
+        * same with anova!
+        
+2. Problems
+    * how to treat missing data!
+        * machine learning algorithms automatically impute missing data based on averages and such. I don't necessarily want that.
+        * would like to treat certain columns with a lot of NA's as bonus information!! hmm
+        * useful variables and whether they are complete or not:
+            + inv.mlsto - complete :)
+            + Billing.Type - 1225 NAs
+                * which years?
+            + Discipline - complete!
+            + JD.Primary - 626
+                * which years? can i fill this in with something?
+            + Job.Type.Secondary - 2064
+            + Job.Type.Primary - 626 NA's
+            + JD.Second - 1274 NA's
+            + Type -1200 NA's
+            + client.count - complete!
+            + Business - 22 NA's only - can complete :) with 'unknown'
+            + no.employees - 743 NAs
+            + Biz.size - 38 NA's - can complete :) 
+            + Biz.type - only 18 NA's
+            + contact.count - 1177 NAs
+            + dist - 354 NA's
+                * can impute with average?? 
+            + charge.ph - 2 NA's - might delete this one entirely
+            + charge.pc - delete entirely
+            + no.users - complete
+            + pc.contracttech - 7 NA's only for all below
+            + pc.director 
+            + pc.midtech 
+            + pc.midpro
+            + pc.gradpro
+            + pc.seniortech
+            + pc.seniorpro
+            + pc.unknown
+            + pc.pro
+            + pc.tech 
+            + Num.disc - 84 NA's
+            + mean.peeps - complete :)
+            + hours.perday - complete :)  
+            + code.client - compelte :)
+            + code.director - complete :)
+            + code.ProjEng - complete :)
+            + ProjEng.Pos - complete :)
+            + code.Eng2 - 2205 'unknown'
+            + Eng2.Pos - 2206 'unknown'
+            + Job.Source - 1595 unknown
+        * using just the complete data - ran an anova, important variables are... in order of significance..
+            + no.users
+            + Business
+            + Discipline
+            + mean.peeps
+            + hours worked on teh project per day
+            + ProjEng.Pos
+            + Tot.Invoiced
+            + pc. seniortech
+            + Biz.type
+            + pc.seniorpro
+
+        * after running an LM, results are a bit different... significant variables are.. 
+            + Num of users who worked on the job (-ve)
+            + Tot.Invoiced (+ve)
+            + hours.perday (-ve)
+            + client business engineer: (+ve)
+            + client business signs: (+ve)
+            + client business membrane fabraictor: (+ve)
+            + client business manufacturer/supplier: (+ve)
+            + Proj eng position: senior professional (-ve)
+            + Internal job (-ve)
+            + client business developer: (+ve)
+            + client count (+ve)
+
+        * now try throwing in variables with high numbers of NA's one at a time
+            + Billing.Type - not significant at all :( doesn't seem right.
+                + hours per day now significant - has really affected the other p values.
+            + 
+
