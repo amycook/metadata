@@ -40,6 +40,8 @@ Description of each variable
 * code.client: fabricated code for each client - between C2000 and C3000
 * mlsto: milestone abbreviation of job number
 * inv.mlsto: total amount invoiced for that jobnumber (including all milestones)
+* inv.vs.cost: inv.mlsto/(cost.mlsto+dis.sc.mlsto)
+* return.pdol: balance.mlsto/(cost.mlsto+dis.sc.mlsto)
 * num.inv: number of invoices for that job number and all milestones
 * mean.inv: mean invoice size for that job and all milestones (excluding negative invoices)
 * Inv.freq: mean number of days between invoices for that job (incl milestones)
@@ -75,6 +77,8 @@ Description of each variable
     * all project values have inv.mlsto greater than 15% of project value were deemed 'NA'
     * re-did client count and contact.count based on numbers in all7b
     * deleted outliers: return.pdol over 30
+    
+* all7d - important variables only, after variable selection using cforest, anova and random forest
 
 
 #2. Information about the Summary Choices Made
@@ -395,6 +399,188 @@ j. Engineered Variables
 
         * now try throwing in variables with high numbers of NA's one at a time
             + Billing.Type - not significant at all :( doesn't seem right.
-                + hours per day now significant - has really affected the other p values.
-            + 
+                + hours per day now significant - has really affected the other p values
+
+# 3. Variable selection
+
+    * first looked at core variables: variables with pretty much every row full
+        * some variables could be easily imputed - ie low number of missing variables for 'State' - can assume these were in QLD as they were early jobs and almost all early jobs were in QLD
+    * cforest gives unbiased variable selection - use original settings - refer paper
+        * however special var.imp() doesn't work on this data - too heavy. 
+        * special var.imp eliminates correlated variables during the analysis of each variable
+    * cross checked cforest with anova and random forest
+    
+    * then looked at variables with a lot of missing data one at a time iin combination with the full set 
+        * using cforest and anova
+        * chose another 8 variables as important
+
+    * resulting important variables
+Full: 
+inv.mlsto
+timespan
+no.users
+Discipline
+pc.pro
+client.totinv
+code.director
+Num.disc
+Business
+Biz.type
+
+Many NA:
+
+code.contact
+code.client
+Project.Value
+JD.Second
+Billing.Type
+Post.Code
+code.ProjEng
+Billing.Type
+majority.pos
+pc.majpos
+
+# 4. Cluster analysis
+
+1. Went through each numerical varialble (variables deemed important AND unimportant) and tested their normality on a Q-Q plot. Then took the log of each numeric variable and tested for normality again. Then the same by square rooting all numeric variables.
+
+It was found that taking the log made the follwing variables significantly more 'normal' which was assessed on the QQ plot as well as density plots:
+
+    * cost.mlsto
+    * hrs.mlsto 
+    * hours.perday
+    * Num.days
+    * client.totinv
+    * no.users
+    * inv.mlsto
+    
+And the square root made the following variables significantly more normal:
+
+    * timespan
+    
+2. The variables were then all scaled individually by subtracting the mean and then dividiing by the standard deviation. The following variables were used for clustering, and were chosen because they were important variables. In this case, variables were used even if they cannot be used in the final predictive model because the information cannot be known before a project commences.
+
+    * log(cost.mlsto)
+    * log(hrs.mlsto)
+    * log(hours.perday)
+    * log(Num.days)
+    * log(client.totinv)
+    * log(no.users)
+    * log(inv.mlsto)
+    * sqrt(timespan)
+    * pc.pro
+    * Num.disc
+    * mean.peeps
+    * balance.mlsto
+    * return.pdol
+    
+3. After a hierarchical tree was made, it was decided 5 clusters provided the best division fromo a visual assessment. The clusters revealed interesting differences:
+
+    1. very small jobs: 654 jobs- 28% of jobs
+        * finances:
+            * $1200 total invoiced
+            * $0.62 return per dollar which is very good
+            * accounts for 4.6% of company profits
+        * time:
+            * takes about 5 hours
+            * time entered on 3 days
+            * 2 hours entered per day on average
+            * hours spread over 8 days (median)
+            * accounts for 1% of staff hours
+        * staff:
+            * single discipline
+            * single worker
+            * 93% of hours by a professional
+        * client:
+            * median job size = $4k
+            * mean job size = $14k
+
+    2. small/med jobs: 659 jobs - 28% of jobs 
+        * finances:
+            * $5000 total invoiced
+            * $0.41 return per dollar which is good
+            * accounts for 17.1% of company profits
+        * time:
+            * takes about 26 hours
+            * time entered on 12 days
+            * 2.3 hours entered per day on average
+            * hours spread over 5 months (median)
+            * accounts for 6% of staff hours
+        * staff:
+            * single discipline
+            * two workers
+            * 95% of hours by a professional
+        * client:
+            * median job size = $10k
+            * mean job size = $27k
+    
+    3. big jobs: 176 jobs - 7.5% of jobs
+        * finances:
+            * $65450 total invoiced (median)
+            * $0.13 return per dollar which is not so good
+            * accounts for 48% of company profits
+        * time:
+            * takes about 610 hours (median) - 76 full working weeks
+            * time entered on 116 days
+            * 5 hours entered per day on average
+            * hours spread over 30 months (median)
+            * accounts for 58% of staff hours
+        * staff:
+            * three disciplines
+            * 8 staff
+            * 60% of hours by a professional
+        * client:
+            * median job size = $48k
+            * mean job size = $102k
+    
+    4. Medium jobs: 511 jobs - 22% of jobs
+        * finances:
+            * $20000 total invoiced (median)
+            * $0.20 return per dollar which is fine
+            * accounts for 27% of company profits
+        * time:
+            * takes about 155 hours (median) - 20 full working weeks
+            * time entered on 41 days
+            * 3.5 hours entered per day on average
+            * hours spread over 15 months (median)
+            * accounts for 32% of staff hours
+        * staff:
+            * 1 discipline
+            * 4 staff
+            * 65% of hours by a professional
+        * client:
+            * median job size = $23k
+            * mean job size = $38k
+    
+    5. small jobs: 321 jobs - 14% of jobs
+        * finances:
+            * $3000 total invoiced (median)
+            * $0.32 return per dollar which is fine
+            * accounts for 3% of company profits
+        * time:
+            * takes about 30 hours (median) - 3.5 days
+            * time entered on 7 days
+            * 4.5 hours entered per day on average
+            * hours spread over 3.5 months (median)
+            * accounts for 4% of staff hours
+        * staff:
+            * 1 discipline
+            * 2 staff
+            * 26% of hours by a professional
+        * client:
+            * median job size = $6k
+            * mean job size = $14k
+    
+4. Check if 5 is the optimal number of clusters
+
+5. Principal component analysis
+
+6. visualise categories in 3D principal component space
+
+
+
+
+
+
+
 
